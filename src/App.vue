@@ -1,140 +1,106 @@
 <template>
   <div id="app" class="container">
     <div class="row">
-      <div class="col-md-6">
-        <h2> Canvas </h2>
-
-        <FortuneWheel
-          style="width: 500px; max-width: 100%;"
-          :verify="canvasVerify"
-          :canvas="canvasOptions"
-          :prizes="prizesCanvas"
-          @rotateStart="onCanvasRotateStart"
-          @rotateEnd="onRotateEnd"
-        />
-
-        <div>
-          <input type="checkbox" v-model="canvasVerify"> 模拟请求：等待 {{ verifyDuration }}s 再转
+      <div class="row">
+        <div class="col-md-12">
+          <div class="col-md-9 flex-row">
+            <div v-for="level in answearsAndQuestions" key="index" class="level">{{ level.index }}</div>
+          </div>
+          <div class="col-md-3">
+            <div class="">punkty</div>
+            <div class="" clas="totalPoints">{{ totalPoints }}</div>
+          </div>
         </div>
       </div>
-      <div class="col-md-6">
-        <h2> Image </h2>
-
-        <FortuneWheel
-          style="width: 500px; max-width: 100%;"
-          type="image"
-          :useWeight="true"
-          :verify="canvasVerify"
-          :prizeId="prizeId"
-          :angleBase="-2"
-          :prizes="prizesImage"
-          @rotateStart="onImageRotateStart"
-          @rotateEnd="onRotateEnd"
-        >
-          <template #wheel>
-            <img src="./assets/wheel.png" style="width: 100%;transform: rotateZ(60deg)" />
-          </template>
-          <template #button>
-            <img src="./assets/button.png" style="width: 180px"/>
-          </template>
-        </FortuneWheel>
-
-        <div class="btn-list">
-          <div class="btn" v-for="(item, idx) in prizesCanvas" :key="idx" :style="{ background: item.bgColor }" @click="onChangePrize(item.id)"></div>
+      <div class="col-md-12">
+        <h2>Pytanie pomocnicze</h2>
+        <h3>{{ answearsAndQuestions[currentQuestion].question }}</h3>
+        <div class="answerBoard">
+          <div class="letter" v-for="(revealed, index) in currentAnswerRevealed" :key="index">
+            {{ revealed ? currentAnswer[index] : '-' }}
+          </div>
         </div>
-        <div class="wheel-result">
-          当前 100% <span :style="{ background: prizeRes.bgColor }"></span>
-          <br/> 点击按钮，可在旋转中强行改变结果,
-          <br/> 最好在旋转减速前, 大约一半的时间之前, 最好一次旋转只改变一次
-        </div>
+      </div>
+    </div>
+    <div class="col-md-12">
+      <h2> wylosowałeś: <span v-show="prizeValue">{{ prizeValue }}</span> </h2>
+      <FortuneWheel style="width: 500px; max-width: 100%;" :verify="canvasVerify" :canvas="canvasOptions"
+        :prizes="prizesCanvas" @rotateStart="onCanvasRotateStart" @rotateEnd="onRotateEnd" />
+      <div v-if="showAlphabet" class="lettersBoard">
+        <div v-for="letter in letters" :key="`letter-${letter}`" @click="letterClicked(letter)" class="letter"
+          :class="{ 'clicked': clickedLetters.includes(letter) }">{{ letter }}</div>
+
+        {{ clickedLetters }}
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue';
 import FortuneWheel from './components/FortuneWheel/index.vue'
 import { PrizeConfig } from './components/FortuneWheel/types'
+import { prizesCanvas } from './helpers.ts'
 
-const prizeId = ref(0)
 
+// stan canvas
+// 
 const canvasVerify = ref(false)
-const verifyDuration = 2
+const verifyDuration = 1
 const canvasOptions = {
   btnWidth: 140,
   borderColor: '#584b43',
   borderWidth: 6,
   lineHeight: 30
 }
+// 
+// end stan canvas
 
-const prizesCanvas: PrizeConfig[] = [
-  {
-    id: 1,
-    name: 'Blue', // 奖品名
-    value: 'Blue\'s value', // 奖品值
-    bgColor: '#45ace9', // 背景色
-    color: '#ffffff', // 字体色
-    probability: 30 // 概率，最多保留 4 位小数
-  },
-  {
-    id: 2,
-    name: 'Red',
-    value: 'Red\'s value',
-    bgColor: '#dd3832',
-    color: '#ffffff',
-    probability: 40
-  },
-  {
-    id: 3,
-    name: 'Yellow',
-    value: 'Yellow\'s value',
-    bgColor: '#fef151',
-    color: '#ffffff',
-    probability: 30
-  }
-]
+// stan gry
+const prizeValue = ref('')
+type Letters = 'P' | 'A' | 'R' | 'I' | 'S' | 'F' | 'G' | 'H' | 'I' | 'J'
+type answearsAndQuestions = { index: number, question: string, answer: string, levelPoints: string }
 
-const prizesImage: PrizeConfig[] = [
-  {
-    id: 1,
-    value: 'Blue\'s value', // 奖品值
-    weight: 1 // 权重
-  },
-  {
-    id: 2,
-    value: 'Red\'s value',
-    weight: 0
-  },
-  {
-    id: 3,
-    value: 'Yellow\'s value',
-    weight: 0
-  }
-]
+const totalPoints = ref(0)
+const letterUsed = ref<Letters[]>([]);
+const currentLevel = ref(0)
+const currentQuestion = ref(0)
+const letters: Letters[] = ['P', 'A', 'R', 'I', 'S', 'F', 'G', 'H', 'I', 'J']
+const answearsAndQuestions: answearsAndQuestions[] = [{ index: 1, question: 'What is the capital of France?', answer: 'Paris', levelPoints: '1000' }, { index: 2, question: 'What is the capital of Germany?', answer: 'Berlin', levelPoints: '2000' }, { index: 3, question: 'What is the capital of Italy?', answer: 'Rome', levelPoints: '1000' }]
+const totalLevels = answearsAndQuestions.length
 
-const prizeRes = computed(() => {
-  return prizesCanvas.find(item => item.id === prizeId.value) || prizesCanvas[0]
-})
+let canClickLetter = false
+let showAlphabet = false
+const currentAnswer = computed(() => answearsAndQuestions[currentQuestion.value].answer);
+const currentAnswerRevealed = ref(new Array(currentAnswer.value.length).fill(false));
+const clickedLetters = ref<Letters[]>([]);
 
-function testRequest (verified: boolean, duration: number) { // 参数 1: 是否通过验证, 2: 延迟时间
+
+// obserwator który uruchamia się po zmianie pytania
+watch(currentQuestion, () => {
+  currentAnswerRevealed.value = new Array(currentAnswer.value.length).fill(false);
+  clickedLetters.value = []; //reset po przejściu do nowego pytania
+});
+
+
+// funkcja która wywołana jest przez onCanvasRotateStart się po kliknięciu w koło
+function testRequest(verified: boolean, duration: number) {
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve(verified)
     }, duration)
   })
 }
-
-function onCanvasRotateStart (rotate: Function) {
+// funkcja uruchamiana po kliknięciu w koło
+function onCanvasRotateStart(rotate: Function) {
   if (canvasVerify.value) {
-    const verified = true // true: 测试通过验证, false: 测试未通过验证
+    const verified = true
     testRequest(verified, verifyDuration * 1000).then((verifiedRes) => {
       if (verifiedRes) {
-        console.log('验证通过, 开始旋转')
-        rotate() // 调用回调, 开始旋转
-        canvasVerify.value = false // 关闭验证模式
+        rotate()
+        canvasVerify.value = false
       } else {
-        alert('未通过验证')
+        alert('restart canvas')
       }
     })
     return
@@ -142,21 +108,88 @@ function onCanvasRotateStart (rotate: Function) {
   console.log('onCanvasRotateStart')
 }
 
-function onImageRotateStart () {
-  console.log('onImageRotateStart')
+// funkcja uruchamiana po zakończeniu obrotu koła
+function onRotateEnd(prize: PrizeConfig) {
+  console.log('onCanvasRotateEnd', prize)
+  updatePrizeValue(prize)
+  canClickLetter = true
+  showAlphabet = true
 }
 
-function onRotateEnd (prize: PrizeConfig) {
-  alert(prize.value)
+// funkcja uruchamiana po kliknięciu w literę
+function updatePrizeValue(prize: PrizeConfig) {
+  prizeValue.value = prize.value
 }
 
-function onChangePrize (id: number) {
-  prizeId.value = id
+// funkcja uruchamiana po kliknięciu w literę
+function letterClicked(letter: Letters) {
+  if (!canClickLetter) return;
+  const answer = currentAnswer.value.toUpperCase();
+  let updated = false;
+  debugger;
+  const newRevealed = currentAnswerRevealed.value.map((revealed, index) => {
+    if (answer[index] === letter) {
+      updated = true;
+      return true;
+    }
+    return revealed;
+  });
+
+  if (updated) {
+    currentAnswerRevealed.value = newRevealed;
+    clickedLetters.value.push(letter);
+  } else {
+    alert('Wrong letter!');
+  }
 }
-  
+
 </script>
 
 <style lang="scss" scoped>
 @import './styles/bootstrap-grid.min.css';
 @import './style.scss';
+
+.lettersBoard,
+.answerBoard {
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+  justify-content: center;
+  margin-top: 20px;
+  outline: 1px solid #000;
+  // max-width: 20px;
+
+  .letter {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid #000;
+    margin: 2px;
+  }
+
+  .letter.clicked {
+    background-color: #cccccc;
+    pointer-events: none;
+  }
+}
+
+.level {
+  width: 50px;
+  height: 50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid #000;
+  margin: 2px;
+}
+
+.flex-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
 </style>

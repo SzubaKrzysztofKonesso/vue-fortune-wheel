@@ -1,26 +1,5 @@
 
-# Vue-Fortune-Wheel For Vue3
 
-组件名称: Wheel of Fortune, 命运之轮, 幸运转盘
-
-应用场景: 抽奖
-
-## For Vue2
-[查看](https://github.com/XiaoLin1995/vue-fortune-wheel/tree/vue2)
-
-
-## Install
-```
-yarn add vue-fortune-wheel
-```
-or
-```
-npm install vue-fortune-wheel
-```
-
-## Language
-
-[English (By Google Translate)](./README.md)| [中文](./README.CN.md)
 
 ## Demo
 
@@ -32,28 +11,6 @@ https://xiaolin1995.github.io/vue-fortune-wheel/demo/
 ```html
 <template>
   <div>
-    <!-- type: image -->
-    <FortuneWheel
-      style="width: 500px; max-width: 100%;"
-      ref="wheelEl"
-      type="image"
-      :useWeight="true"
-      :verify="canvasVerify"
-      :prizeId="prizeId"
-      :angleBase="-2"
-      :prizes="prizesImage"
-      @rotateStart="onImageRotateStart"
-      @rotateEnd="onRotateEnd"
-    >
-      <template #wheel>
-        <img src="./assets/wheel.png" style="width: 100%;transform: rotateZ(60deg)" />
-      </template>
-      <template #button>
-        <img src="./assets/button.png" style="width: 180px"/>
-      </template>
-    </FortuneWheel>
-
-
     <!-- type: canvas -->
     <FortuneWheel
       style="width: 500px; max-width: 100%;"
@@ -84,14 +41,7 @@ const canvasOptions = {
 }
 
 const prizesCanvas = [
-  {
-    id: 1, //* 每个奖品唯一的 id, 大于 0 的整数
-    name: 'Blue', // 奖品名, type 为 canvas 时的显示值 (type 为 image 时无需此参数)
-    value: 'Blue\'s value', //* 奖品值, 旋转结束后的返回值
-    bgColor: '#45ace9', // 背景色 (type 为 image 时无需此参数)
-    color: '#ffffff', // 字体色 (type 为 image 时无需此参数)
-    probability: 30 //* 概率, 最多保留 4 位小数 （所有奖品的概率和必须为 100）
-  },
+  
   {
     id: 2,
     name: 'Red',
@@ -111,11 +61,7 @@ const prizesCanvas = [
 ]
 
 const prizesImage = [
-  {
-    id: 1, //* 每个奖品唯一的 id, 大于 0 的整数
-    value: 'Blue\'s value', //* 奖品值, 旋转结束后的返回值
-    weight: 1 // 权重, 如果 useWeight 为 true, 则以 weight 计算概率 (即 probability 无效), weight 必须为整数
-  },
+ 
   {
     id: 2,
     value: 'Red\'s value',
